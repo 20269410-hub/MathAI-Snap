@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MathAI Snap · 정기고사 기출 분석 & 예상문제</title>
+ 
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+ 
+<style>
+    :root {
+        --primary: #2563EB;
+        --primary-light: #EFF6FF;
+        --primary-hover: #1D4ED8;
+        --accent: #059669;
+        --bg-color: #F8FAFC;
+        --card-bg: #FFFFFF;
+        --text-main: #0F172A;
+        --text-sub: #64748B;
+        --border-color: #E2E8F0;
+        --danger: #DC2626;
+        --amber: #D97706;
+        --amber-light: #FFFBEB;
+        --amber-border: #FDE68A;
+    }
+ 
+    * { box-sizing: border-box; }
+ 
+    body {
+        font-family: 'Pretendard', -apple-system, sans-serif;
+        background-color: #E2E8F0;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        color: var(--text-main);
+        -webkit-font-smoothing: antialiased;
+    }
+ 
+    .app-container {
+        width: 100%;
+        max-width: 440px;
+        background: var(--bg-color);
+        min-height: 100vh;
+        box-shadow: 0 0 25px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+ 
+    /* ---------- Header ---------- */
+    .header {
+        background: var(--card-bg);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-title { font-size: 18px; font-weight: 800; color: var(--primary); line-height: 1.2; }
+    .header-subtitle { font-size: 11px; color: var(--text-sub); font-weight: 600; margin-top: 2px; }
+    .reset-btn {
+        font-size: 11px;
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid #BFDBFE;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .reset-btn:hover { background: #DBEAFE; }
+    .header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+ 
+    /* ---------- AI settings modal (원본 API 키 모달 재사용) ---------- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: none; justify-content: center; align-items: center;
+        z-index: 3000; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+        background: white; padding: 24px; border-radius: 20px; width: 100%; max-width: 360px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+    .modal-desc { font-size: 12px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; }
+    .modal-input {
+        width: 100%; padding: 12px; border: 1px solid var(--border-color);
+        border-radius: 10px; font-size: 13px; margin-bottom: 8px; font-family: inherit;
+    }
+    .modal-note { font-size: 11px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.4; }
+    .provider-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+    .provider-btn { flex: 1; padding: 10px 0; border-radius: 10px; border: 1px solid var(--border-color); background: var(--card-bg); font-weight: 700; font-size: 13px; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+    .provider-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+ 
+    /* ---------- Stepper (tab style) ---------- */
+    .stepper {
+        display: flex;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 4px;
+    }
+    .step-item {
+        flex: 1;
+        padding: 10px 0 9px;
+        border: none;
+        background: none;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-sub);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+        text-align: center;
+        font-family: inherit;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    .step-circle {
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        background: var(--border-color);
+        color: var(--text-sub);
+        font-size: 10.5px;
+        font-weight: 800;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .step-item.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .step-item.active .step-circle { background: var(--primary); color: #fff; }
+    .step-item.completed .step-circle { background: var(--accent); color: #fff; }
+    .step-item:disabled { color: #CBD5E1; cursor: not-allowed; }
+    .step-item:disabled .step-circle { background: var(--border-color); color: #CBD5E1; }
+    .step-connector { display: none; }
+    .step-label { display: inline; }
+ 
+    /* ---------- Layout ---------- */
+    .content { padding: 20px; flex: 1; overflow-y: auto; }
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+ 
+    /* ---------- Intro ---------- */
+    .intro-card {
+        display: flex; gap: 10px; align-items: flex-start;
+        background: var(--primary-light);
+        border: 1px solid #BFDBFE;
+        padding: 14px 16px;
+        border-radius: 14px;
+        margin-bottom: 18px;
+    }
+    .intro-icon { font-size: 18px; line-height: 1.3; }
+    .intro-text { font-size: 12.5px; color: #1E40AF; line-height: 1.55; font-weight: 600; }
+ 
+    /* ---------- Fields ---------- */
+    .field-group { margin-bottom: 16px; }
+    .field-label { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .optional-tag { font-size: 10px; font-weight: 700; color: var(--text-sub); background: #F1F5F9; padding: 2px 6px; border-radius: 6px; }
+    .text-input, .text-area {
+        width: 100%; padding: 12px; border: 1px solid var(--border-color);
+        border-radius: 10px; font-size: 13px; font-family: inherit; background: var(--card-bg); color: var(--text-main);
+    }
+    .text-input:focus, .text-area:focus { outline: none; border-color: var(--primary); }
+    .text-area { resize: vertical; min-height: 76px; margin-bottom: 8px; line-height: 1.5; }
+ 
+    /* ---------- Upload card ---------- */
+    .upload-card {
+        border: 2px dashed #93C5FD;
+        border-radius: 18px;
+        padding: 28px 20px;
+        text-align: center;
+        background: var(--primary-light);
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+    }
+    .upload-card:hover { border-color: var(--primary); background: #DBEAFE; }
+    .upload-icon { font-size: 44px; margin-bottom: 10px; }
+    .upload-title { font-size: 15px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .upload-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+ 
+    .or-divider { text-align: center; margin: 16px 0; font-size: 12px; color: var(--text-sub); font-weight: 600; position: relative; }
+    .or-divider::before, .or-divider::after { content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border-color); }
+    .or-divider::before { left: 0; }
+    .or-divider::after { right: 0; }
+ 
+    .btn-secondary {
+        width: 100%; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);
+        padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+ 
+    /* ---------- Problem bank ---------- */
+    .bank-section { margin-top: 8px; margin-bottom: 20px; }
+    .bank-header { font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; }
+    .bank-header strong { color: var(--primary); }
+    .bank-list { display: flex; flex-direction: column; gap: 8px; }
+    .empty-state {
+        text-align: center; padding: 24px 16px; color: var(--text-sub); font-size: 12.5px; font-weight: 600;
+        border: 1.5px dashed var(--border-color); border-radius: 14px;
+    }
+    .bank-item {
+        background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 12px;
+        border-radius: 14px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s;
+    }
+    .bank-item:hover { border-color: var(--primary); }
+    .bank-thumb {
+        width: 40px; height: 40px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+        background: var(--bg-color); border: 1px solid var(--border-color);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .bank-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .bank-thumb-icon { font-size: 14px; font-weight: 800; color: var(--text-sub); }
+    .bank-item-info { flex: 1; min-width: 0; }
+    .bank-item-num {
+        display: inline-block; font-size: 10.5px; font-weight: 700; color: #475569; background: #F1F5F9;
+        padding: 2px 7px; border-radius: 6px; margin-bottom: 3px;
+    }
+    .bank-item-label { font-size: 12.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bank-delete-btn { width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--bg-color); color: var(--text-sub); font-size: 12px; cursor: pointer; flex-shrink: 0; }
+    .bank-delete-btn:hover { background: #FEE2E2; color: var(--danger); }
+ 
+    /* ---------- Buttons ---------- */
+    .btn-primary {
+        width: 100%; background: var(--primary); color: white; border: none; padding: 16px;
+        border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer;
+        box-shadow: 0 4px 10px rgba(37,99,235,0.2);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { background: #CBD5E1; box-shadow: none; cursor: not-allowed; }
+ 
+    /* ---------- Loading ---------- */
+    .loading-overlay {
+        position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+        width: 100%; max-width: 440px; background: rgba(248,250,252,0.95);
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        z-index: 1500; padding: 60px 20px; text-align: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+        width: 44px; height: 44px; border: 4px solid var(--primary-light); border-top-color: var(--primary);
+        border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { margin-bottom: 6px; font-size: 16px; font-weight: 800; color: var(--text-main); }
+    .loading-sub { color: var(--text-sub); font-size: 13px; line-height: 1.4; }
+ 
+    /* ---------- Info cards ---------- */
+    .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .result-badge { font-size: 11px; color: var(--primary); font-weight: 700; background: var(--primary-light); padding: 5px 10px; border-radius: 20px; }
+    .result-unit { font-size: 12px; font-weight: 700; color: var(--text-sub); }
+ 
+    .info-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+    .info-card.highlight-card { background: var(--amber-light); border: 1px solid var(--amber-border); }
+    .info-card-title { font-size: 14px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .info-card.highlight-card .info-card-title { color: var(--amber); }
+    .info-card-text { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .info-card.highlight-card .info-card-text { color: #78350F; }
+ 
+    .chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: var(--primary-light); color: var(--primary); border: 1px solid #BFDBFE; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; }
+    .bullet-list { margin: 0; padding-left: 18px; }
+    .bullet-list li { font-size: 13px; color: var(--text-sub); line-height: 1.75; }
+ 
+    .count-selector { display: flex; gap: 8px; }
+    .count-btn { flex: 1; padding: 11px 0; border-radius: 10px; border: 1px solid var(--border-color); background: var(--card-bg); font-weight: 700; font-size: 13.5px; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+    .count-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+ 
+    /* ---------- Quiz ---------- */
+    .quiz-progress-bar { height: 5px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+    .quiz-progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.3s ease; width: 0; }
+    .quiz-meta { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--text-sub); margin-bottom: 16px; }
+ 
+    .quiz-card { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); }
+    .quiz-concept-tag { font-size: 11px; color: var(--primary); font-weight: 700; margin-bottom: 8px; display: block; }
+    .quiz-badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .quiz-type-badge { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 8px; margin-bottom: 8px; }
+    .quiz-type-badge.mc { background: var(--primary-light); color: var(--primary); }
+    .quiz-type-badge.sa { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-border); }
+    .sa-hint { font-size: 12px; color: var(--text-sub); margin-bottom: 12px; }
+    .sa-grade-row { display: flex; gap: 8px; margin-top: 14px; }
+    .sa-grade-btn { flex: 1; }
+    .sa-graded-label { font-size: 13px; font-weight: 700; color: var(--text-main); margin-top: 10px; text-align: center; }
+    .quiz-question-text { font-size: 15px; font-weight: 700; line-height: 1.5; margin-bottom: 14px; color: var(--text-main); }
+ 
+    .math-display-box {
+        background: #1E293B; color: #fff; padding: 20px; border-radius: 16px; margin-bottom: 16px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow-x: auto;
+    }
+    .math-display-box.small { padding: 14px; margin-bottom: 10px; }
+    .math-display-box .katex { color: #fff; }
+ 
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+    .quiz-opt-btn {
+        width: 100%; background: var(--card-bg); border: 1px solid var(--border-color); padding: 14px; border-radius: 12px;
+        text-align: left; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; font-family: inherit; color: var(--text-main);
+    }
+    .quiz-opt-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-light); }
+    .quiz-opt-btn:disabled { cursor: default; }
+    .opt-number { width: 20px; height: 20px; border-radius: 50%; background: var(--bg-color); color: var(--text-sub); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .opt-content { flex: 1; overflow-x: auto; }
+    .quiz-opt-btn.correct { background: #D1FAE5; border-color: var(--accent); color: #065F46; font-weight: 700; }
+    .quiz-opt-btn.correct .opt-number { background: var(--accent); color: #fff; }
+    .quiz-opt-btn.wrong { background: #FEE2E2; border-color: var(--danger); color: #991B1B; font-weight: 700; }
+    .quiz-opt-btn.wrong .opt-number { background: var(--danger); color: #fff; }
+ 
+    .quiz-feedback { margin-top: 16px; padding: 14px; border-radius: 12px; }
+    .feedback-correct { background: #D1FAE5; }
+    .feedback-wrong { background: #FEE2E2; }
+    .feedback-correct .feedback-title { color: #065F46; }
+    .feedback-wrong .feedback-title { color: #991B1B; }
+    .feedback-title { font-size: 14px; font-weight: 800; margin-bottom: 8px; }
+    .feedback-explanation { font-size: 12.5px; color: var(--text-sub); line-height: 1.6; margin-bottom: 14px; }
+    .feedback-explanation .katex { font-size: 1em; }
+ 
+    .summary-card { text-align: center; padding: 50px 20px; }
+    .summary-emoji { font-size: 44px; margin-bottom: 10px; }
+    .summary-title { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
+    .summary-score { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 20px; }
+ 
+    /* ---------- Review ---------- */
+    .review-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+    .review-concept-tag { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 6px; display: block; }
+    .review-qtext { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; line-height: 1.5; }
+    .review-answer { font-size: 12.5px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+    .review-answer .katex { font-size: 1em; }
+    .review-explanation { font-size: 12px; color: var(--text-sub); line-height: 1.6; }
+ 
+    /* ---------- Toast ---------- */
+    .toast {
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px);
+        background: var(--text-main); color: #fff; padding: 12px 18px; border-radius: 12px;
+        font-size: 12.5px; font-weight: 700; opacity: 0; transition: all 0.3s ease; z-index: 2000;
+        max-width: 380px; width: calc(100% - 56px); text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+ 
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+ 
+    /* ---------- Accessibility ---------- */
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+        outline: 2.5px solid var(--primary);
+        outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    }
+</style>
+</head>
+<body>
+<div class="app-container">
+ 
+    <!-- Header -->
+    <div class="header">
+        <div class="header-brand">
+            <span style="font-size:24px;">📐</span>
+            <div>
+                <div class="header-title">MathAI Snap</div>
+                <div class="header-subtitle">호치민 한국국제학교 · 정기고사 대비</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="reset-btn" id="aiSettingsBtn" onclick="openAiSettingsModal()" title="AI 모델 설정">⚙️ Claude</button>
+            <button class="reset-btn" onclick="resetAll()" title="처음부터 다시 시작">↺</button>
+        </div>
+    </div>
+ 
+    <!-- Stepper -->
+    <div class="stepper">
+        <button class="step-item active" id="stepBtn1" onclick="goToStep(1)">
+            <span class="step-circle">1</span><span class="step-label">기출 모으기</span>
+        </button>
+        <div class="step-connector"></div>
+        <button class="step-item" id="stepBtn2" onclick="goToStep(2)" disabled>
+            <span class="step-circle">2</span><span class="step-label">AI 분석</span>
+        </button>
+        <div class="step-connector"></div>
+        <button class="step-item" id="stepBtn3" onclick="goToStep(3)" disabled>
+            <span class="step-circle">3</span><span class="step-label">예상문제</span>
+        </button>
+        <div class="step-connector"></div>
+        <button class="step-item" id="stepBtn4" onclick="goToStep(4)" disabled>
+            <span class="step-circle">4</span><span class="step-label">복습노트</span>
+        </button>
+    </div>
+ 
+    <div class="content">
+ 
+        <!-- SCREEN 1: 기출 모으기 -->
+        <div id="screen-1" class="screen active">
+            <div class="intro-card">
+                <div class="intro-icon">💡</div>
+                <div class="intro-text">여러 번의 정기고사 기출문제를 모아주세요. 2개 이상 모을수록 AI가 출제 경향을 더 정확히 분석할 수 있어요.</div>
+            </div>
+ 
+            <div class="field-group">
+                <label class="field-label">시험 범위 메모 <span class="optional-tag">선택</span></label>
+                <input type="text" id="examContextInput" class="text-input" placeholder="예: 고2 수학I · 삼각함수, 2학기 중간고사" oninput="examContext=this.value">
+            </div>
+ 
+            <div class="upload-card" onclick="triggerUpload()">
+                <div class="upload-icon">📸</div>
+                <div class="upload-title">기출문제 사진 업로드</div>
+                <div class="upload-desc">여러 장을 한 번에 선택할 수 있어요<br>손글씨로 푼 문제도 인식 가능합니다</div>
+                <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="handleFiles(this)">
+            </div>
+ 
+            <div class="or-divider">또는 직접 입력</div>
+ 
+            <div class="field-group">
+                <textarea id="textProblemInput" class="text-area" placeholder="기출문제 내용을 텍스트로 입력하세요"></textarea>
+                <button class="btn-secondary" onclick="addTextProblem()">+ 목록에 추가</button>
+            </div>
+ 
+            <div class="bank-section">
+                <div class="bank-header">모은 기출문제 <strong id="problemCount" class="mono">0</strong>개</div>
+                <div id="problemBankList" class="bank-list">
+                    <div class="empty-state">아직 모은 기출문제가 없어요</div>
+                </div>
+            </div>
+ 
+            <button class="btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>AI로 기출 경향 분석하기 →</button>
+        </div>
+ 
+        <!-- SCREEN 2: AI 분석 -->
+        <div id="screen-2" class="screen">
+            <div class="result-header">
+                <div class="result-badge">AI 분석 완료</div>
+                <div class="result-unit mono" id="analysisUnit"></div>
+            </div>
+ 
+            <div class="info-card">
+                <div class="info-card-title">🎯 핵심 개념</div>
+                <div class="chip-list" id="conceptChips"></div>
+            </div>
+ 
+            <div class="info-card">
+                <div class="info-card-title">📋 자주 나오는 문제 유형</div>
+                <ul class="bullet-list" id="questionTypesList"></ul>
+            </div>
+ 
+            <div class="info-card">
+                <div class="info-card-title">📊 난이도 특징</div>
+                <div class="info-card-text" id="difficultyNote"></div>
+            </div>
+ 
+            <div class="info-card highlight-card">
+                <div class="info-card-title">✨ 종합 출제 경향</div>
+                <div class="info-card-text" id="trendsText"></div>
+            </div>
+ 
+            <div class="field-group">
+                <label class="field-label">예상문제 개수</label>
+                <div class="count-selector">
+                    <button class="count-btn" data-count="5" onclick="selectQuestionCount(5)">5개</button>
+                    <button class="count-btn active" data-count="8" onclick="selectQuestionCount(8)">8개</button>
+                    <button class="count-btn" data-count="12" onclick="selectQuestionCount(12)">12개</button>
+                </div>
+            </div>
+ 
+            <button class="btn-primary" onclick="runQuestionGeneration()">예상문제 생성하기 →</button>
+        </div>
+ 
+        <!-- SCREEN 3: 예상문제 퀴즈 -->
+        <div id="screen-3" class="screen">
+            <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill"></div></div>
+            <div class="quiz-meta">
+                <span id="quizProgressText" class="mono">문제 1 / 5</span>
+                <span id="quizScoreText" class="mono">점수 0</span>
+            </div>
+            <div id="quizContent"></div>
+            <div id="quizSummary" class="summary-card" style="display:none;">
+                <div class="summary-emoji">🎉</div>
+                <div class="summary-title">퀴즈 완료!</div>
+                <div class="summary-score" id="summaryScoreText"></div>
+                <button class="btn-primary" onclick="goToStep(4)">복습노트 보기 →</button>
+            </div>
+        </div>
+ 
+        <!-- SCREEN 4: 복습노트 -->
+        <div id="screen-4" class="screen">
+            <div class="info-card">
+                <div class="info-card-title">🎯 이번 시험 핵심 개념</div>
+                <div class="chip-list" id="reviewConceptChips"></div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-title">✅ 이렇게 풀면 잘 풀려요</div>
+                <ul class="bullet-list" id="reviewTipsList"></ul>
+            </div>
+            <div class="info-card highlight-card">
+                <div class="info-card-title">✨ 출제 경향 요약</div>
+                <div class="info-card-text" id="reviewTrendsText"></div>
+            </div>
+            <div id="wrongAnswerSection"></div>
+            <button class="btn-primary" onclick="resetForNewExam()">새로운 시험 범위로 다시 시작</button>
+        </div>
+ 
+    </div>
+</div>
+ 
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">분석 중...</div>
+    <div class="loading-sub" id="loadingSub">AI가 직접 분석하고 있어요</div>
+</div>
+<div class="toast" id="toast"></div>
+ 
+<div class="modal-overlay" id="aiSettingsModal">
+    <div class="modal-content">
+        <div class="modal-title">AI 모델 설정</div>
+        <div class="modal-desc">Claude는 Claude 앱/웹사이트 안에서 열었을 때 별도 설정 없이 바로 작동해요. Gemini를 쓰려면 Google AI Studio에서 발급받은 API 키가 필요해요.</div>
+        <div class="provider-toggle">
+            <button class="provider-btn" data-provider="claude" onclick="selectProvider('claude')">Claude</button>
+            <button class="provider-btn" data-provider="gemini" onclick="selectProvider('gemini')">Gemini</button>
+        </div>
+        <div id="geminiKeyRow" style="display:none;">
+            <input type="password" class="modal-input" id="geminiKeyInput" placeholder="Gemini API 키 (AIza로 시작)">
+            <div class="modal-note">키는 이 화면에만 저장되고, 새로고침하면 사라져서 다시 입력해야 해요. 서버에 저장되지 않아요.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-secondary" onclick="closeAiSettingsModal()">취소</button>
+            <button class="btn-primary" style="margin-top:0;" onclick="saveAiSettings()">저장하기</button>
+        </div>
+    </div>
+</div>
+ 
+<script>
+/* ============ State ============ */
+let problemBank = [];
+let examContext = "";
+let analysisResult = null;
+let selectedQuestionCount = 8;
+let predictedQuestions = [];
+let quizIndex = 0;
+let quizScore = 0;
+let wrongList = [];
+let unlockedSteps = {1:true,2:false,3:false,4:false};
+let aiProvider = 'claude';
+let geminiApiKey = '';
+ 
+const API_URL = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-6";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
+const GEMINI_MODEL = "gemini-2.5-flash";
+ 
+/* ============ Utils ============ */
+function generateId(){ return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,9); }
+ 
+function escapeHtml(str){
+    if(str===null||str===undefined) return '';
+    const div=document.createElement('div');
+    div.textContent=String(str);
+    return div.innerHTML;
+}
+ 
+function renderKatex(latex, displayMode){
+    if(!latex) return '';
+    if(!window.katex) return escapeHtml(latex);
+    try{ return katex.renderToString(latex, {throwOnError:false, displayMode:!!displayMode}); }
+    catch(e){ return escapeHtml(latex); }
+}
+ 
+// escapes text, then renders any \( ... \) segments as inline KaTeX
+function renderMixedText(text){
+    if(!text) return '';
+    const escaped = escapeHtml(text);
+    return escaped.replace(/\\\(([\s\S]*?)\\\)/g, (m, math)=>{
+        if(!window.katex) return m;
+        try{ return katex.renderToString(math, {throwOnError:false}); }
+        catch(e){ return m; }
+    });
+}
+ 
+let toastTimer;
+function showToast(msg){
+    const el=document.getElementById('toast');
+    el.textContent=msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>el.classList.remove('show'), 3200);
+}
+ 
+function showLoadingOverlay(text){
+    document.getElementById('loadingText').textContent=text;
+    document.getElementById('loadingSub').textContent=(aiProvider==='gemini'?'Gemini':'Claude')+'가 직접 분석하고 있어요';
+    document.getElementById('loadingOverlay').classList.add('show');
+}
+function updateLoadingText(text){ document.getElementById('loadingText').textContent=text; }
+function hideLoadingOverlay(){ document.getElementById('loadingOverlay').classList.remove('show'); }
+ 
+/* ============ Problem bank input ============ */
+function triggerUpload(){ document.getElementById('fileInput').click(); }
+ 
+function resizeImageFile(file, maxDim=1400, quality=0.85){
+    return new Promise((resolve, reject)=>{
+        const reader=new FileReader();
+        reader.onload=(e)=>{
+            const img=new Image();
+            img.onload=()=>{
+                let {width,height}=img;
+                if(width>maxDim||height>maxDim){
+                    if(width>height){ height=Math.round(height*(maxDim/width)); width=maxDim; }
+                    else{ width=Math.round(width*(maxDim/height)); height=maxDim; }
+                }
+                const canvas=document.createElement('canvas');
+                canvas.width=width; canvas.height=height;
+                const ctx=canvas.getContext('2d');
+                ctx.drawImage(img,0,0,width,height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror=reject;
+            img.src=e.target.result;
+        };
+        reader.onerror=reject;
+        reader.readAsDataURL(file);
+    });
+}
+ 
+async function handleFiles(input){
+    const files=Array.from(input.files||[]);
+    for(const file of files){
+        try{
+            const dataUrl=await resizeImageFile(file);
+            const base64=dataUrl.split(',')[1];
+            problemBank.push({
+                id:generateId(), type:'image', mediaType:'image/jpeg',
+                data:base64, preview:dataUrl, label:file.name||'이미지 문제'
+            });
+        }catch(e){
+            console.error(e);
+            showToast('이미지를 불러오는 중 문제가 발생했어요');
+        }
+    }
+    renderProblemBank();
+    input.value='';
+}
+ 
+function addTextProblem(){
+    const ta=document.getElementById('textProblemInput');
+    const val=ta.value.trim();
+    if(!val) return;
+    problemBank.push({
+        id:generateId(), type:'text', data:val,
+        label: val.length>26 ? val.slice(0,26)+'…' : val
+    });
+    ta.value='';
+    renderProblemBank();
+}
+ 
+function removeProblem(id){
+    problemBank=problemBank.filter(p=>p.id!==id);
+    renderProblemBank();
+}
+ 
+function renderProblemBank(){
+    document.getElementById('problemCount').textContent=problemBank.length;
+    const container=document.getElementById('problemBankList');
+    if(problemBank.length===0){
+        container.innerHTML='<div class="empty-state">아직 모은 기출문제가 없어요</div>';
+    }else{
+        container.innerHTML=problemBank.map((p,idx)=>`
+            <div class="bank-item">
+                <div class="bank-thumb">
+                    ${p.type==='image' ? `<img src="${p.preview}" alt="기출 ${idx+1}"/>` : '<span class="bank-thumb-icon">Aa</span>'}
+                </div>
+                <div class="bank-item-info">
+                    <div class="bank-item-num">기출 ${String(idx+1).padStart(2,'0')}</div>
+                    <div class="bank-item-label">${escapeHtml(p.label)}</div>
+                </div>
+                <button class="bank-delete-btn" onclick="removeProblem('${p.id}')" aria-label="삭제">✕</button>
+            </div>
+        `).join('');
+    }
+    document.getElementById('analyzeBtn').disabled = problemBank.length===0;
+}
+ 
+/* ============ Claude API ============ */
+async function callClaudeAPI(contentBlocks){
+    let res;
+    try{
+        res=await fetch(API_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                model:MODEL,
+                max_tokens:1000,
+                messages:[{role:'user', content:contentBlocks}]
+            })
+        });
+    }catch(networkErr){
+        const err=new Error('AI 기능은 Claude 앱/웹사이트 안에서 열었을 때만 작동해요. 공유받은 파일이라면 Claude에서 다시 열어주세요.');
+        err.isEnvError=true;
+        throw err;
+    }
+    if(!res.ok) throw new Error('API 오류: '+res.status);
+    const data=await res.json();
+    return (data.content||[]).map(b=>b.type==='text'?b.text:'').join('\n');
+}
+ 
+function toGeminiParts(blocks){
+    return blocks.map(b=>{
+        if(b.type==='text') return {text:b.text};
+        if(b.type==='image') return {inline_data:{mime_type:b.source.media_type, data:b.source.data}};
+        return null;
+    }).filter(Boolean);
+}
+ 
+async function callGeminiAPI(contentBlocks){
+    if(!geminiApiKey){
+        const err=new Error('Gemini API 키를 먼저 설정해주세요 (헤더의 ⚙️ 버튼).');
+        err.isEnvError=true;
+        throw err;
+    }
+    const parts=toGeminiParts(contentBlocks);
+    let res;
+    try{
+        res=await fetch(GEMINI_URL+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(geminiApiKey),{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                contents:[{role:'user', parts}],
+                generationConfig:{maxOutputTokens:2048}
+            })
+        });
+    }catch(networkErr){
+        const err=new Error('Gemini API 연결에 실패했어요. 인터넷 연결이나 키를 확인해주세요.');
+        err.isEnvError=true;
+        throw err;
+    }
+    if(!res.ok){
+        let detail='';
+        try{ const errJson=await res.json(); detail=(errJson&&errJson.error&&errJson.error.message)||''; }catch(e){}
+        const err=new Error('Gemini API 오류('+res.status+')'+(detail?': '+detail.slice(0,120):'')+'. API 키가 올바른지 확인해주세요.');
+        err.isEnvError = (res.status===400 || res.status===401 || res.status===403);
+        throw err;
+    }
+    const data=await res.json();
+    const cand=(data.candidates||[])[0];
+    if(!cand) throw new Error('Gemini가 응답을 만들지 못했어요. 다시 시도해주세요.');
+    return ((cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('\n');
+}
+ 
+async function callAI(contentBlocks){
+    return aiProvider==='gemini' ? callGeminiAPI(contentBlocks) : callClaudeAPI(contentBlocks);
+}
+ 
+/* ============ AI settings modal ============ */
+function openAiSettingsModal(){
+    document.querySelectorAll('.provider-btn').forEach(b=>b.classList.toggle('active', b.dataset.provider===aiProvider));
+    document.getElementById('geminiKeyRow').style.display = aiProvider==='gemini' ? 'block' : 'none';
+    document.getElementById('geminiKeyInput').value = geminiApiKey;
+    document.getElementById('aiSettingsModal').classList.add('show');
+}
+function closeAiSettingsModal(){
+    document.getElementById('aiSettingsModal').classList.remove('show');
+}
+function selectProvider(p){
+    document.querySelectorAll('.provider-btn').forEach(b=>b.classList.toggle('active', b.dataset.provider===p));
+    document.getElementById('geminiKeyRow').style.display = p==='gemini' ? 'block' : 'none';
+}
+function saveAiSettings(){
+    const activeBtn=document.querySelector('.provider-btn.active');
+    const chosen = activeBtn ? activeBtn.dataset.provider : 'claude';
+    if(chosen==='gemini'){
+        const key=document.getElementById('geminiKeyInput').value.trim();
+        if(!key){ showToast('Gemini API 키를 입력해주세요.'); return; }
+        geminiApiKey=key;
+    }
+    aiProvider=chosen;
+    document.getElementById('aiSettingsBtn').textContent = aiProvider==='gemini' ? '⚙️ Gemini' : '⚙️ Claude';
+    closeAiSettingsModal();
+    showToast(aiProvider==='gemini' ? 'Gemini로 설정했어요' : 'Claude로 설정했어요');
+}
+ 
+function sanitizeJsonBackslashes(text){
+    return text.replace(/\\\\|\\(.)/gs, function(m,c){
+        if(m==='\\\\') return m;
+        if(c==='"' || c==='/') return m;
+        return '\\\\' + (c===undefined ? '' : c);
+    });
+}
+ 
+function parseJsonSafe(text){
+    let clean=text.trim();
+    clean=clean.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'');
+    const start=clean.indexOf('{');
+    const end=clean.lastIndexOf('}');
+    if(start!==-1 && end!==-1) clean=clean.substring(start,end+1);
+    try{
+        return JSON.parse(clean);
+    }catch(e){
+        return JSON.parse(sanitizeJsonBackslashes(clean));
+    }
+}
+ 
+function problemContentBlocks(){
+    const blocks=[];
+    problemBank.forEach((p,i)=>{
+        blocks.push({type:'text', text:`\n[기출문제 ${i+1}]`});
+        if(p.type==='image'){
+            blocks.push({type:'image', source:{type:'base64', media_type:p.mediaType, data:p.data}});
+        }else{
+            blocks.push({type:'text', text:p.data});
+        }
+    });
+    return blocks;
+}
+ 
+function buildAnalysisContent(){
+    const blocks=[];
+    let header='아래는 호치민시 한국국제학교 수학 정기고사에 실제로 출제되었던 기출문제들입니다.';
+    if(examContext.trim()) header += ` (시험 범위 메모: ${examContext.trim()})`;
+    blocks.push({type:'text', text:header});
+    blocks.push(...problemContentBlocks());
+    blocks.push({type:'text', text:`
+위 기출문제들을 종합적으로 분석해주세요. 아래 JSON 형식으로만 답변하고 다른 설명은 절대 추가하지 마세요. 각 항목은 간결하게 작성하세요.
+ 
+{
+  "unit": "이 문제들이 속한 단원/범위 (10자 이내)",
+  "commonConcepts": ["핵심 개념", "핵심 개념", "핵심 개념"],
+  "questionTypes": ["문제 유형 설명 (20자 이내)", "문제 유형 설명 (20자 이내)"],
+  "difficultyNote": "전반적 난이도 특징 한 문장",
+  "trends": "종합 출제 경향과 다음 시험 대비 조언 (2문장 이내)",
+  "solvingTips": ["실전 풀이 팁 (25자 이내)", "실전 풀이 팁 (25자 이내)", "실전 풀이 팁 (25자 이내)"]
+}
+ 
+commonConcepts는 3~5개, questionTypes는 2~4개, solvingTips는 3~4개로 작성하세요. solvingTips는 이 유형의 문제를 실수 없이 빠르게 푸는 구체적인 실전 조언으로 작성하세요 (예: 계산 순서, 자주 틀리는 부호 실수, 검산 방법 등 학생이 바로 적용할 수 있는 것).`});
+    return blocks;
+}
+ 
+function buildQuestionContent(index, total){
+    const blocks=[];
+    blocks.push({type:'text', text:'아래는 호치민시 한국국제학교 수학 정기고사 기출문제와 그 분석 결과입니다.'});
+    blocks.push(...problemContentBlocks());
+ 
+    const concepts=analysisResult.commonConcepts||[];
+    const focusConcept = concepts.length>0 ? concepts[index % concepts.length] : '';
+    const qType = (index % 3 === 2) ? 'short_answer' : 'multiple_choice';
+ 
+    const typeInstruction = qType==='short_answer'
+        ? `- 이 문제는 주관식(단답형)으로 만드세요. 학생이 직접 계산해서 답을 쓰는 형태이며, 4지선다 선택지는 만들지 마세요.`
+        : `- 이 문제는 4지선다 객관식으로 만드세요.
+- 선택지에 여러 값이나 한글이 포함되면 반드시 LaTeX \\text{} 명령어로 한글을 감싸세요 (예: x = 2 \\text{ 또는 } x = 5)`;
+ 
+    const schema = qType==='short_answer'
+        ? `{
+  "type": "short_answer",
+  "concept": "이 문제가 다루는 핵심 개념",
+  "qText": "문제 설명 (한국어 문장, 수식 제외)",
+  "qMath": "문제에 필요한 수식만 LaTeX로 (없으면 빈 문자열)",
+  "answer": "정답 (간단한 LaTeX 또는 숫자, 예: x=2 또는 12)",
+  "explanation": "정답 풀이 과정을 간단히 (수식 부분은 \\(...\\) 로 감싸기, 예: 따라서 \\(x=2\\)입니다)"
+}`
+        : `{
+  "type": "multiple_choice",
+  "concept": "이 문제가 다루는 핵심 개념",
+  "qText": "문제 설명 (한국어 문장, 수식 제외)",
+  "qMath": "문제에 필요한 수식만 LaTeX로 (없으면 빈 문자열)",
+  "opts": ["LaTeX 선택지1", "LaTeX 선택지2", "LaTeX 선택지3", "LaTeX 선택지4"],
+  "ans": 0,
+  "explanation": "정답 풀이 과정을 간단히 (수식 부분은 \\(...\\) 로 감싸기, 예: 따라서 \\(x=2\\)입니다)"
+}`;
+ 
+    blocks.push({type:'text', text:`
+[분석 결과]
+단원: ${analysisResult.unit||''}
+핵심 개념: ${concepts.join(', ')}
+출제 경향: ${analysisResult.trends||''}
+ 
+위 기출문제와 분석 결과를 참고하여, 실제 정기고사에 나올 가능성이 높은 새로운 예상문제를 1개 만들어주세요. 이것은 ${index+1}번째 문제(총 ${total}개 중)입니다.
+ 
+요구사항:
+- 기존 기출문제와 숫자나 조건이 달라야 합니다 (그대로 복사하지 마세요)
+- "${focusConcept}" 개념을 중심으로 다루세요
+${typeInstruction}
+- 중요: JSON 문자열 안의 LaTeX 백슬래시(\\\\)는 반드시 두 번 연속으로 이스케이프해서 써야 합니다. 예를 들어 \\frac{1}{2}는 JSON 안에서 \\\\frac{1}{2}로 적어야 합니다. 이 규칙을 지키지 않으면 JSON이 깨집니다.
+ 
+아래 JSON 형식으로만 답변하고 다른 설명은 추가하지 마세요:
+${schema}`});
+    return blocks;
+}
+ 
+/* ============ Analysis flow ============ */
+async function runAnalysis(){
+    if(problemBank.length===0) return;
+    showLoadingOverlay('기출문제 패턴을 분석하는 중...');
+    try{
+        const text=await callAI(buildAnalysisContent());
+        const parsed=parseJsonSafe(text);
+        if(!Array.isArray(parsed.commonConcepts)) parsed.commonConcepts=[];
+        if(!Array.isArray(parsed.questionTypes)) parsed.questionTypes=[];
+        if(!Array.isArray(parsed.solvingTips)) parsed.solvingTips=[];
+        analysisResult=parsed;
+        renderAnalysisScreen();
+        unlockStep(2);
+        goToStep(2);
+    }catch(e){
+        console.error(e);
+        showToast((e && e.isEnvError) ? e.message : '분석 중 오류가 발생했어요. 다시 시도해주세요.');
+    }finally{
+        hideLoadingOverlay();
+    }
+}
+ 
+function renderAnalysisScreen(){
+    document.getElementById('analysisUnit').textContent = analysisResult.unit || '';
+    document.getElementById('conceptChips').innerHTML =
+        analysisResult.commonConcepts.map(c=>`<span class="chip">${escapeHtml(c)}</span>`).join('');
+    document.getElementById('questionTypesList').innerHTML =
+        analysisResult.questionTypes.map(t=>`<li>${escapeHtml(t)}</li>`).join('');
+    document.getElementById('difficultyNote').innerHTML = renderMixedText(analysisResult.difficultyNote || '');
+    document.getElementById('trendsText').innerHTML = renderMixedText(analysisResult.trends || '');
+}
+ 
+function selectQuestionCount(n){
+    selectedQuestionCount=n;
+    document.querySelectorAll('.count-btn').forEach(b=>{
+        b.classList.toggle('active', parseInt(b.dataset.count,10)===n);
+    });
+}
+ 
+/* ============ Question generation flow ============ */
+async function runQuestionGeneration(){
+    predictedQuestions=[];
+    quizIndex=0; quizScore=0; wrongList=[];
+    document.getElementById('quizContent').style.display='';
+    document.getElementById('quizSummary').style.display='none';
+ 
+    const n=selectedQuestionCount;
+    showLoadingOverlay(`예상문제 1/${n} 생성 중...`);
+    let envErrorMsg=null;
+    for(let i=0;i<n;i++){
+        updateLoadingText(`예상문제 ${i+1}/${n} 생성 중...`);
+        try{
+            const text=await callAI(buildQuestionContent(i,n));
+            const q=parseJsonSafe(text);
+            if(q && q.type==='short_answer' && q.qText && q.answer){
+                predictedQuestions.push(q);
+            }else if(q && q.qText && Array.isArray(q.opts) && q.opts.length>=2){
+                if(typeof q.ans!=='number' || q.ans<0 || q.ans>=q.opts.length) q.ans=0;
+                q.type='multiple_choice';
+                predictedQuestions.push(q);
+            }
+        }catch(err){
+            console.error('문제 생성 실패:', err);
+            if(err && err.isEnvError){ envErrorMsg=err.message; break; }
+        }
+    }
+    hideLoadingOverlay();
+ 
+    if(envErrorMsg){
+        showToast(envErrorMsg);
+        return;
+    }
+    if(predictedQuestions.length===0){
+        showToast('예상문제 생성에 실패했어요. 다시 시도해주세요.');
+        return;
+    }
+    renderQuizQuestion();
+    unlockStep(3);
+    unlockStep(4);
+    goToStep(3);
+}
+ 
+/* ============ Quiz ============ */
+function renderQuizQuestion(){
+    const q=predictedQuestions[quizIndex];
+    const container=document.getElementById('quizContent');
+    const isSA = q.type==='short_answer';
+    container.innerHTML=`
+        <div class="quiz-card">
+            <div class="quiz-badge-row">
+                ${q.concept ? `<div class="quiz-concept-tag">${escapeHtml(q.concept)}</div>` : ''}
+                <div class="quiz-type-badge ${isSA?'sa':'mc'}">${isSA?'주관식':'객관식'}</div>
+            </div>
+            <div class="quiz-question-text">${escapeHtml(q.qText)}</div>
+            ${q.qMath ? `<div class="math-display-box">${renderKatex(q.qMath,true)}</div>` : ''}
+            ${isSA ? `
+                <div class="sa-hint">직접 풀어본 뒤 정답을 확인해보세요</div>
+                <button class="btn-primary" id="saRevealBtn" onclick="revealShortAnswer()">정답 확인하기</button>
+                <div id="saReveal" style="display:none;"></div>
+            ` : `
+                <div class="quiz-options" id="quizOptions">
+                    ${q.opts.map((opt,i)=>`
+                        <button class="quiz-opt-btn" onclick="checkQuizAnswer(${i})">
+                            <span class="opt-number">${i+1}</span>
+                            <span class="opt-content">${renderKatex(opt)}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `}
+            <div class="quiz-feedback" id="quizFeedback" style="display:none;"></div>
+        </div>
+    `;
+    updateQuizProgress();
+}
+ 
+function revealShortAnswer(){
+    const q=predictedQuestions[quizIndex];
+    document.getElementById('saRevealBtn').style.display='none';
+    const reveal=document.getElementById('saReveal');
+    reveal.style.display='block';
+    reveal.innerHTML=`
+        <div class="math-display-box small">${renderKatex(q.answer,true)}</div>
+        <div class="review-explanation">${renderMixedText(q.explanation||'')}</div>
+        <div class="sa-grade-row">
+            <button class="btn-secondary sa-grade-btn" onclick="selfGrade(true)">맞았어요 ✅</button>
+            <button class="btn-secondary sa-grade-btn" onclick="selfGrade(false)">틀렸어요 ❌</button>
+        </div>
+    `;
+}
+ 
+function selfGrade(isCorrect){
+    const q=predictedQuestions[quizIndex];
+    if(isCorrect) quizScore++; else wrongList.push(q);
+    document.getElementById('quizScoreText').textContent=`점수 ${quizScore}`;
+ 
+    const gradeRow=document.querySelector('#saReveal .sa-grade-row');
+    if(gradeRow) gradeRow.innerHTML = `<div class="sa-graded-label">${isCorrect?'🎉 정답 처리했어요!':'💡 다음엔 더 잘할 수 있어요!'}</div>`;
+ 
+    const fb=document.getElementById('quizFeedback');
+    fb.style.display='block';
+    fb.className='quiz-feedback '+(isCorrect?'feedback-correct':'feedback-wrong');
+    fb.innerHTML=`<button class="btn-primary feedback-next-btn" onclick="nextQuizQuestion()">${quizIndex<predictedQuestions.length-1?'다음 문제 →':'결과 보기 →'}</button>`;
+}
+ 
+function updateQuizProgress(){
+    document.getElementById('quizProgressText').textContent = `문제 ${quizIndex+1} / ${predictedQuestions.length}`;
+    document.getElementById('quizScoreText').textContent = `점수 ${quizScore}`;
+    document.getElementById('quizProgressFill').style.width = (quizIndex/predictedQuestions.length*100)+'%';
+}
+ 
+function checkQuizAnswer(selectedIdx){
+    const q=predictedQuestions[quizIndex];
+    const btns=document.querySelectorAll('#quizOptions .quiz-opt-btn');
+    const isCorrect = selectedIdx===q.ans;
+ 
+    btns.forEach((btn,idx)=>{
+        btn.disabled=true;
+        if(idx===q.ans) btn.classList.add('correct');
+        if(idx===selectedIdx && !isCorrect) btn.classList.add('wrong');
+    });
+ 
+    if(isCorrect) quizScore++; else wrongList.push(q);
+ 
+    const fb=document.getElementById('quizFeedback');
+    fb.style.display='block';
+    fb.className='quiz-feedback '+(isCorrect?'feedback-correct':'feedback-wrong');
+    fb.innerHTML=`
+        <div class="feedback-title">${isCorrect?'🎉 정답입니다!':'💡 아쉽지만 오답입니다.'}</div>
+        <div class="feedback-explanation">${renderMixedText(q.explanation||'')}</div>
+        <button class="btn-primary feedback-next-btn" onclick="nextQuizQuestion()">${quizIndex<predictedQuestions.length-1?'다음 문제 →':'결과 보기 →'}</button>
+    `;
+    document.getElementById('quizScoreText').textContent=`점수 ${quizScore}`;
+}
+ 
+function nextQuizQuestion(){
+    if(quizIndex<predictedQuestions.length-1){
+        quizIndex++;
+        renderQuizQuestion();
+    }else{
+        showQuizSummary();
+    }
+}
+ 
+function showQuizSummary(){
+    document.getElementById('quizContent').style.display='none';
+    const summary=document.getElementById('quizSummary');
+    summary.style.display='block';
+    document.getElementById('summaryScoreText').textContent = `${quizScore} / ${predictedQuestions.length} 문제 정답`;
+    document.getElementById('quizProgressFill').style.width='100%';
+    document.getElementById('quizProgressText').textContent='완료';
+}
+ 
+/* ============ Review ============ */
+function renderReviewScreen(){
+    document.getElementById('reviewConceptChips').innerHTML =
+        (analysisResult.commonConcepts||[]).map(c=>`<span class="chip">${escapeHtml(c)}</span>`).join('');
+    document.getElementById('reviewTipsList').innerHTML =
+        (analysisResult.solvingTips||[]).map(t=>`<li>${escapeHtml(t)}</li>`).join('') || '<li>팁을 찾지 못했어요</li>';
+    document.getElementById('reviewTrendsText').innerHTML = renderMixedText(analysisResult.trends || '');
+ 
+    const wrongSection=document.getElementById('wrongAnswerSection');
+    if(wrongList.length>0){
+        wrongSection.innerHTML = `
+            <div class="info-card-title" style="margin:22px 2px 12px;">📝 틀린 문제 다시보기</div>
+            ${wrongList.map(q=>`
+                <div class="review-item">
+                    ${q.concept?`<div class="review-concept-tag">${escapeHtml(q.concept)}</div>`:''}
+                    <div class="review-qtext">${escapeHtml(q.qText)}</div>
+                    ${q.qMath?`<div class="math-display-box small">${renderKatex(q.qMath,true)}</div>`:''}
+                    <div class="review-answer">정답: ${q.type==='short_answer' ? renderKatex(q.answer) : renderKatex(q.opts[q.ans])}</div>
+                    <div class="review-explanation">${renderMixedText(q.explanation||'')}</div>
+                </div>
+            `).join('')}
+        `;
+    }else{
+        wrongSection.innerHTML='';
+    }
+}
+ 
+/* ============ Navigation ============ */
+function unlockStep(n){
+    unlockedSteps[n]=true;
+    const btn=document.getElementById('stepBtn'+n);
+    btn.disabled=false;
+}
+ 
+function goToStep(n){
+    if(!unlockedSteps[n]) return;
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+n).classList.add('active');
+ 
+    document.querySelectorAll('.step-item').forEach((btn,idx)=>{
+        const stepNum=idx+1;
+        btn.classList.remove('active','completed');
+        if(stepNum===n) btn.classList.add('active');
+        else if(unlockedSteps[stepNum]) btn.classList.add('completed');
+    });
+ 
+    if(n===4) renderReviewScreen();
+}
+ 
+let resetPending=false, resetPendingTimer=null;
+function requestReset(){
+    if(resetPending){
+        clearTimeout(resetPendingTimer);
+        resetPending=false;
+        performReset();
+    }else{
+        resetPending=true;
+        showToast('한 번 더 누르면 모두 초기화돼요');
+        resetPendingTimer=setTimeout(()=>{ resetPending=false; }, 3000);
+    }
+}
+function performReset(){
+    problemBank=[]; analysisResult=null; predictedQuestions=[];
+    quizIndex=0; quizScore=0; wrongList=[]; examContext='';
+    document.getElementById('examContextInput').value='';
+    unlockedSteps={1:true,2:false,3:false,4:false};
+    [2,3,4].forEach(n=>{ document.getElementById('stepBtn'+n).disabled=true; });
+    renderProblemBank();
+    goToStep(1);
+}
+function resetForNewExam(){ requestReset(); }
+function resetAll(){ requestReset(); }
+ 
+/* init */
+renderProblemBank();
+</script>
+</body>
+</html>
